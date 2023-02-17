@@ -69,11 +69,6 @@ binary_sensor:
     name: ${capital_name} Status
     id: ${capital_name}_status
 
-  # - platform: ble_presence
-  #   name: ${capital_name} BLE Yaroslav
-  #   id: ${capital_name}_ble_yaroslav
-  #   mac_address: A0:FB:C5:2F:AB:7C
-
 text_sensor:
   - platform: template
     name: ${capital_name} Uptime Human Readable
