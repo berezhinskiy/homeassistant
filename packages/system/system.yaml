@@ -1,0 +1,322 @@
+---
+system:
+  # https://www.home-assistant.io/integrations/recorder/
+  recorder:
+    # Use utf8mb4 charset for MariaDB to avoid "Illegal mix of collations" error
+    db_url: !secret recorder_url
+
+  # https://www.home-assistant.io/integrations/influxdb/
+  influxdb:
+    host: !secret influxdb_host
+    port: 8086
+    api_version: 2
+    organization: !secret influxdb_organization
+    token: !secret influxdb_token
+    bucket: !secret influxdb_bucket
+    ssl: false
+    tags_attributes:
+      - friendly_name
+    exclude:
+      domains:
+        - automation
+        - script
+        - steps
+        - floors
+        - update
+      entities:
+        - sensor.time
+        - sensor.time_date
+        - sensor.system_report
+        - input_select.greetings
+        - binary_sensor.total_unavailable_components
+        - binary_sensor.total_unknown_components
+      entity_globs:
+        - "*.test_*"
+
+  # https://www.home-assistant.io/integrations/my/
+  my:
+
+  # https://www.home-assistant.io/components/sun/
+  sun:
+
+  # https://www.home-assistant.io/docs/ecosystem/ios/
+  ios:
+
+  # https://www.home-assistant.io/integrations/api/
+  api:
+
+  # https://www.home-assistant.io/integrations/discovery/
+  discovery:
+
+  # Example configuration.yaml entry
+  prometheus:
+    namespace: hass
+
+  # https://www.home-assistant.io/integrations/tts/
+  tts:
+    - platform: google_translate
+
+  # https://www.home-assistant.io/dashboards/dashboards/
+  lovelace:
+    mode: storage
+    dashboards:
+      test-yaml:
+        mode: yaml
+        show_in_sidebar: true
+        title: Main
+        icon: mdi:monitor-dashboard
+        filename: dashboards/main.yaml
+
+  # https://www.home-assistant.io/integrations/input_boolean/
+  input_boolean:
+    homeassistant_master_control:
+      name: Home Assistant master control
+      icon: mdi:chess-queen
+
+  # https://www.home-assistant.io/integrations/input_select/
+  input_select:
+    greetings:
+      name: Greetings list
+      icon: mdi:hand-wave
+      options:
+        - Hi
+        - Hello
+        - Dear
+        - Ку
+        - Привіт
+        - Пріветікі
+        - Здоровенькі були
+        - Здрасть
+        - Здастє
+        - Здорові
+        - Здоров
+        - Паєхалі
+        - Хелло
+        - Добридень
+        - Драстє
+        - Моє шанування
+        - Моє шануваннячко
+        - Вітаю
+        - Вітання
+        - Вітаннячко
+        - Моє вітання
+        - Радий вітати
+        - Просимо
+        - Ласкаво просимо
+        - Вечір в хату
+        - Шалом
+
+  # https://www.home-assistant.io/integrations/sql/
+  sql:
+
+    - name: Maria DB size
+      db_url: !secret recorder_url
+      query: "SELECT table_schema AS 'db_name', ROUND(SUM( data_length + index_length ) / 1024 / 1024, 2) AS 'size_mb' FROM information_schema.TABLES WHERE table_schema='homeassistant'"
+      column: "size_mb"
+      unit_of_measurement: MB
+
+  # https://www.home-assistant.io/integrations/sensor/
+  sensor:
+
+    # https://www.home-assistant.io/integrations/time_date/
+    - platform: time_date
+      display_options:
+        - "time"
+        - "date"
+        - "time_date"
+
+    # https://www.home-assistant.io/integrations/systemmonitor/
+    - platform: systemmonitor
+      resources:
+        - type: processor_use
+        - type: disk_use_percent
+          arg: /
+        - type: memory_use_percent
+        - type: last_boot
+        - type: disk_free
+          arg: /
+        - type: network_in
+          arg: !secret network_interface
+        - type: network_out
+          arg: !secret network_interface
+        - type: throughput_network_in
+          arg: !secret network_interface
+        - type: throughput_network_out
+          arg: !secret network_interface
+
+  # https://www.home-assistant.io/integrations/template/
+  template:
+    # https://www.home-assistant.io/integrations/template/#state-based-template-binary-sensors-buttons-numbers-selects-and-sensors
+    - binary_sensor:
+        - name: Total unavailable components
+          # id: total_unavailable_components
+          device_class: problem
+          state: "{{ states | selectattr ('state', 'equalto', 'unavailable') | list | count > 0 }}"
+          attributes:
+            count: "{{ states | selectattr ('state', 'equalto', 'unavailable') | list | count }}"
+            value: |
+              {% for component in states | selectattr ('state', 'equalto', 'unavailable') | map(attribute='entity_id') | list %}
+              ▪ {{ component }}
+              {%- endfor %}
+
+        - name: Total unknown components
+          # id: total_unknown_components
+          device_class: problem
+          state: "{{ states | selectattr ('state', 'equalto', 'unknown') | list | count > 0 }}"
+          attributes:
+            count: "{{ states | selectattr ('state', 'equalto', 'unknown') | list | count }}"
+            value: |
+              {% for component in states | selectattr ('state', 'equalto', 'unknown') | map(attribute='entity_id') | list %}
+              ▪ {{ component }}
+              {%- endfor %}
+
+    # https://www.home-assistant.io/integrations/template/#state-based-template-binary-sensors-buttons-numbers-selects-and-sensors
+    - sensor:
+        - name: Sun Angle
+          # id: sun_angle
+          unit_of_measurement: "°"
+          state: "{{ '%+.1f'|format(state_attr('sun.sun', 'elevation')) }}"
+          icon: mdi:sun-angle
+
+        - name: System report
+          # id: system_report
+          # Used for telegram Kattegat bot and notification after startup
+          state: true
+          icon: mdi:file-chart
+          # Avoids the "State max length is 255 characters" error :)
+          attributes:
+            value: |
+              {% set green_flag = true -%}
+
+              {% if is_state('binary_sensor.total_unavailable_components', 'on') %}
+              {%- set green_flag = false %}
+              ‼️ *{{ state_attr('binary_sensor.total_unavailable_components', 'count') }} unavailable* component{% if state_attr('binary_sensor.total_unavailable_components', 'count')|int > 1 %}s{% endif %} detected:
+              ```
+              {{ state_attr('binary_sensor.total_unavailable_components', 'value') }}
+              ```
+              {%- endif -%}
+
+              {% if is_state('binary_sensor.total_unknown_components', 'on') %}
+              {%- set green_flag = false %}
+              ‼️ *{{ state_attr('binary_sensor.total_unknown_components', 'count') }} unknown* component{% if state_attr('binary_sensor.total_unknown_components', 'count')|int > 1 %}s{% endif %} detected:
+              ```
+              {{ state_attr('binary_sensor.total_unknown_components', 'value') }}
+              ```
+              {%- endif -%}
+
+              {% if green_flag %}
+              ✅ Everything works as expected. Good job!
+              {% endif %}
+
+  # https://www.home-assistant.io/integrations/binary_sensor/
+  binary_sensor:
+    # https://www.home-assistant.io/integrations/workday/
+    - platform: workday
+      country: UA
+      workdays: [mon, tue, wed, thu, fri]
+      excludes: [sat, sun]
+
+  # https://www.home-assistant.io/docs/automation/
+  automation:
+
+    - id: mariadb_purge_nightly
+      alias: System - MariaDB purge nightly
+      initial_state: true
+      trigger:
+        # https://www.home-assistant.io/docs/automation/trigger/#time-trigger
+        - platform: time
+          at: "01:00"
+      action:
+        # https://www.home-assistant.io/integrations/recorder/#service-purge
+        - service: recorder.purge
+          data:
+            keep_days: 1
+            repack: true
+
+    - id: hassio_weekly_backup
+      alias: System - HASSIO Weekly Backup
+      initial_state: true
+      trigger:
+        # https://www.home-assistant.io/docs/automation/trigger/#time-trigger
+        - platform: time
+          at: "3:00:00"
+      condition:
+        # https://www.home-assistant.io/docs/scripts/conditions/#time-condition
+        condition: time
+        weekday:
+          - sun
+      action:
+        # https://www.home-assistant.io/integrations/hassio/#service-hassiobackup_full
+        - service: hassio.backup_full
+          data:
+            name: "Automated Backup {{ now().strftime('%Y-%m-%d') }}"
+        # - service: notify.telegram_admins
+        #   data:
+        #     message: |
+        #       🛟 HASSIO weekly backup successfully finished
+
+    # - id: kattegat_notification_homeassistant_startup
+    #   alias: Kattegat - Notification - System - HomeAssistant startup
+    #   initial_state: true
+    #   mode: single
+    #   # https://www.home-assistant.io/docs/automation/trigger/
+    #   trigger:
+    #     # https://www.home-assistant.io/docs/automation/trigger/#home-assistant-trigger
+    #     - platform: homeassistant
+    #       event: start
+    #   action:
+    #     - service: notify.telegram_admins
+    #       data:
+    #         message: |
+    #           ⚙️ HomeAssistant started at {{ states('sensor.time') }}. You will recive system report in 1 min.
+    #     - delay: 00:01:00
+    #     - service: notify.telegram_admins
+    #       data:
+    #         message: |
+    #           {{ state_attr('sensor.system_report', 'value') }}
+
+    # - id: kattegat_notification_unavailable_components
+    #   alias: Kattegat - Notification - System - Total unavailable components
+    #   initial_state: true
+    #   # https://www.home-assistant.io/docs/automation/trigger/
+    #   trigger:
+    #     # https://www.home-assistant.io/docs/automation/trigger/#state-trigger
+    #     - platform: state
+    #       entity_id: binary_sensor.total_unavailable_components
+    #       from: ["on", "off"]
+    #       to: ["on", "off"]
+    #   action:
+    #     - service: notify.telegram_admins
+    #       data:
+    #         message: |
+    #           {% if is_state('binary_sensor.total_unavailable_components', 'on') %}
+    #           ‼️ {{ state_attr('binary_sensor.total_unavailable_components', 'count') }} unavailable components detected:
+    #           ```
+    #           {{ state_attr('binary_sensor.total_unavailable_components', 'value') }}
+    #           ```
+    #           {% else %}
+    #           ✅ Unavailable components resolved
+    #           {% endif %}
+
+    # - id: kattegat_notification_unknown_components
+    #   alias: Kattegat - Notification - System - Total unknown components
+    #   initial_state: true
+    #   # https://www.home-assistant.io/docs/automation/trigger/
+    #   trigger:
+    #     # https://www.home-assistant.io/docs/automation/trigger/#state-trigger
+    #     - platform: state
+    #       entity_id: binary_sensor.total_unknown_components
+    #       from: ["on", "off"]
+    #       to: ["on", "off"]
+    #   action:
+    #     - service: notify.telegram_admins
+    #       data:
+    #         message: |
+    #           {% if is_state('binary_sensor.total_unknown_components', 'on') %}
+    #           ‼️ {{ state_attr('binary_sensor.total_unknown_components', 'count') }} unknown components detected:
+    #           ```
+    #           {{ state_attr('binary_sensor.total_unknown_components', 'value') }}
+    #           ```
+    #           {% else %}
+    #           ✅ Unknown components resolved
+    #           {% endif %}

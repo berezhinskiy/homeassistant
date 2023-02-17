@@ -1,0 +1,97 @@
+---
+test_abstractions:
+
+  climate:
+    # https://github.com/swingerman/ha-dual-smart-thermostat
+    - platform: dual_smart_thermostat
+      name: Test thermostat
+      heater: switch.test_heater
+      cooler: switch.test_cooler
+      target_sensor: sensor.test_temperature
+      openings:
+        - sensor.test_window
+      min_temp: 15
+      target_temp_low: 22
+      target_temp: 24
+      target_temp_high: 26
+      max_temp: 30
+      ac_mode: false
+      cold_tolerance: 1
+      hot_tolerance: 1
+      # min_cycle_duration:
+      #   seconds: 10
+      # keep_alive:
+      #   minutes: 3
+      # initial_hvac_mode: "off"
+      away: # this preset will be available for all hvac modes
+        target_temp_low: 12
+        temperature: 13
+        # target_temp_high: 14
+      home: # this preset will be available only for heat or cool hvac mode
+        temperature: 22
+      precision: 0.1
+      target_temp_step: 0.5
+
+  # https://www.home-assistant.io/integrations/input_number/
+  input_number:
+    test_temperature:
+      name: Test temp
+      min: 10
+      max: 30
+      step: 0.5
+      mode: slider
+
+  # https://www.home-assistant.io/integrations/input_boolean/
+  input_boolean:
+    test_window:
+      name: Test window
+      icon: mdi:window-closed-variant
+
+    test_heater:
+      name: Test heater
+      icon: mdi:radiator
+
+    test_cooler:
+      name: Test cooler
+      icon: mdi:snowflake-alert
+
+  # https://www.home-assistant.io/integrations/switch.template/
+  switch:
+    - platform: template
+      switches:
+        test_heater:
+          friendly_name: Test heater
+          value_template: "{{ is_state('input_boolean.test_heater', 'on') }}"
+          turn_on:
+            - service: input_boolean.turn_on
+              entity_id: input_boolean.test_heater
+          turn_off:
+            - service: input_boolean.turn_off
+              entity_id: input_boolean.test_heater
+
+        test_cooler:
+          friendly_name: Test cooler
+          value_template: "{{ is_state('input_boolean.test_cooler', 'on') }}"
+          turn_on:
+            - service: input_boolean.turn_on
+              entity_id: input_boolean.test_cooler
+          turn_off:
+            - service: input_boolean.turn_off
+              entity_id: input_boolean.test_cooler
+
+  # https://www.home-assistant.io/integrations/template/
+  template:
+
+    # https://www.home-assistant.io/integrations/sensor/
+    - sensor:
+        - name: Test temperature
+          # id: test_test_temperature
+          unique_id: test_temperature
+          device_class: temperature
+          unit_of_measurement: °C
+          state: "{{ states('input_number.test_temperature') }}"
+
+        - name: Test window
+          # id: test_window
+          unique_id: test_window
+          state: "{{ states('input_boolean.test_window') }}"

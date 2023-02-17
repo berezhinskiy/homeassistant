@@ -1,0 +1,222 @@
+---
+braavos_abstractions:
+
+  # https://www.home-assistant.io/integrations/input_number/
+  input_number:
+    braavos_wifi_bad_signal:
+      name: Braavos bad WiFi signal
+      min: 65
+      max: 90
+      step: 5
+      mode: slider
+
+    braavos_temperature_high:
+      name: Braavos temperature high
+      # Should be greater or equal to braavos_temperature_low.max
+      min: 25
+      max: 32
+      step: 1
+      mode: slider
+
+    braavos_temperature_low:
+      name: Braavos temperature low
+      min: 15
+      # Should be less or equal to braavos_temperature_high.min
+      max: 25
+      step: 1
+      mode: slider
+
+    braavos_co2_high:
+      name: Braavos high CO2 concentration
+      min: 700
+      max: 1300
+      step: 100
+      mode: slider
+
+    braavos_pm_high:
+      name: Braavos high PM concentration
+      min: 30
+      max: 50
+      step: 5
+      mode: slider
+
+  # https://www.home-assistant.io/integrations/switch.template/
+  switch:
+
+    - platform: template
+      switches:
+        braavos_relay:
+          friendly_name: Braavos relay
+          value_template: "{{ states('switch.braavos_relay') }}"
+          icon_template: >
+            {% if is_state("switch.braavos_relay", "on") %}
+            mdi:electric-switch-closed
+            {% else %}
+            mdi:electric-switch
+            {% endif %}
+          turn_on:
+            service: switch.turn_on
+            target:
+              entity_id: switch.braavos_relay
+          turn_off:
+            service: switch.turn_off
+            target:
+              entity_id: switch.braavos_relay
+
+  # https://www.home-assistant.io/integrations/template/
+  template:
+
+    # https://www.home-assistant.io/integrations/sensor/
+    - sensor:
+
+        - name: Braavos temperature
+          # id: braavos_temperature
+          unique_id: braavos_temperature
+          device_class: temperature
+          unit_of_measurement: °C
+          availability: "{{ states('sensor.braavos_bme280_temperature') not in ['unavailable', 'unknown'] }}"
+          state: "{{ states('sensor.braavos_bme280_temperature') }}"
+          attributes:
+            sensor: "BME280"
+
+        - name: Braavos humidity
+          # id: braavos_humidity
+          unique_id: braavos_humidity
+          device_class: humidity
+          unit_of_measurement: "%"
+          availability: "{{ states('sensor.braavos_bme280_humidity') not in ['unavailable', 'unknown'] }}"
+          state: "{{ states('sensor.braavos_bme280_humidity') }}"
+          attributes:
+            sensor: "BME280"
+
+        - name: Braavos pressure
+          # id: braavos_pressure
+          unique_id: braavos_pressure
+          device_class: pressure
+          unit_of_measurement: hPa
+          availability: "{{ states('sensor.braavos_bme280_pressure') not in ['unavailable', 'unknown'] }}"
+          state: "{{ states('sensor.braavos_bme280_pressure') }}"
+          attributes:
+            sensor: "BME280"
+
+        - name: Braavos illuminance
+          # id: braavos_illuminance
+          unique_id: braavos_illuminance
+          device_class: illuminance
+          unit_of_measurement: lx
+          availability: "{{ states('sensor.braavos_gy49_illuminance') not in ['unavailable', 'unknown'] }}"
+          state: "{{ states('sensor.braavos_gy49_illuminance') }}"
+          attributes:
+            sensor: "GY49"
+
+        - name: Braavos CO2
+          # id: braavos_co2
+          unique_id: braavos_co2
+          device_class: carbon_dioxide
+          unit_of_measurement: ppm
+          availability: "{{ states('sensor.braavos_mh_z19_co2') not in ['unavailable', 'unknown'] }}"
+          state: "{{ states('sensor.braavos_mh_z19_co2') }}"
+          attributes:
+            sensor: "MH-Z19"
+
+        - name: Braavos PM1
+          # id: braavos_pm1
+          unique_id: braavos_pm1
+          device_class: pm1
+          unit_of_measurement: µg/m³
+          availability: "{{ states('sensor.braavos_particulate_matter_1_0um_concentration') not in ['unavailable', 'unknown'] }}"
+          state: "{{ states('sensor.braavos_particulate_matter_1_0um_concentration') }}"
+          attributes:
+            sensor: "PMSX003"
+
+        - name: Braavos PM25
+          # id: braavos_pm25
+          unique_id: braavos_pm25
+          device_class: pm25
+          unit_of_measurement: µg/m³
+          availability: "{{ states('sensor.braavos_particulate_matter_2_5um_concentration') not in ['unavailable', 'unknown'] }}"
+          state: "{{ states('sensor.braavos_particulate_matter_2_5um_concentration') }}"
+          attributes:
+            sensor: "PMSX003"
+
+        - name: Braavos PM10
+          # id: braavos_pm10
+          unique_id: braavos_pm10
+          device_class: pm10
+          unit_of_measurement: µg/m³
+          availability: "{{ states('sensor.braavos_particulate_matter_10_0um_concentration') not in ['unavailable', 'unknown'] }}"
+          state: "{{ states('sensor.braavos_particulate_matter_10_0um_concentration') }}"
+          attributes:
+            sensor: "PMSX003"
+
+        - name: Braavos UVA
+          # id: braavos_uva
+          unique_id: braavos_uva
+          unit_of_measurement: W/m2
+          availability: "{{ states('sensor.braavos_uva_350_375nm') not in ['unavailable', 'unknown'] }}"
+          state: "{{ states('sensor.braavos_uva_350_375nm') }}"
+          icon: mdi:sun-wireless
+          attributes:
+            sensor: "VEML6075"
+
+        - name: Braavos UVB
+          # id: braavos_uvb
+          unique_id: braavos_uvb
+          unit_of_measurement: W/m2
+          availability: "{{ states('sensor.braavos_uvb_315_340nm') not in ['unavailable', 'unknown'] }}"
+          state: "{{ states('sensor.braavos_uvb_315_340nm') }}"
+          icon: mdi:sun-wireless
+          attributes:
+            sensor: "VEML6075"
+
+        - name: Braavos UV Index
+          # id: braavos_uv_index
+          unique_id: braavos_uv_index
+          unit_of_measurement: W/m2
+          availability: "{{ states('sensor.braavos_uv_index') not in ['unavailable', 'unknown'] }}"
+          state: "{{ states('sensor.braavos_uv_index') }}"
+          icon: mdi:sun-wireless
+          attributes:
+            sensor: "VEML6075"
+
+
+    # https://www.home-assistant.io/integrations/binary_sensor/
+    - binary_sensor:
+
+        - name: Braavos WiFi signal
+          # id: braavos_wifi_signal
+          device_class: problem
+          availability: "{{ states('sensor.braavos_wifi_signal') not in ['unavailable', 'unknown'] }}"
+          state: "{{ states('sensor.braavos_wifi_signal')|int(70)|abs > states('input_number.braavos_wifi_bad_signal')|int }}"
+
+        - name: Braavos PM high
+          # id: braavos_pm_high
+          device_class: safety
+          availability: >
+            {{ states('sensor.braavos_pm1') not in ['unavailable', 'unknown']
+                and states('sensor.braavos_pm25') not in ['unavailable', 'unknown']
+                and states('sensor.braavos_pm10') not in ['unavailable', 'unknown']
+            }}
+          state: >
+            {{ states('sensor.braavos_pm1')|int(0) > states('input_number.braavos_pm_high')|int
+                or states('sensor.braavos_pm25')|int(0) > states('input_number.braavos_pm_high')|int
+                or states('sensor.braavos_pm10')|int(0) > states('input_number.braavos_pm_high')|int
+            }}
+          icon: >
+            {% if is_state("binary_sensor.braavos_pm_high", "on") %}
+            mdi:skull
+            {% else %}
+            mdi:chemical-weapon
+            {% endif %}
+
+        - name: Braavos CO2 high
+          # id: braavos_co2_high
+          device_class: safety
+          availability: "{{ states('sensor.braavos_co2') not in ['unavailable', 'unknown'] }}"
+          state: "{{ states('sensor.braavos_co2')|int(0) > states('input_number.braavos_co2_high')|int }}"
+          icon: >
+            {% if is_state("binary_sensor.braavos_co2_high", "on") %}
+            mdi:skull
+            {% else %}
+            mdi:molecule-co2
+            {% endif %}

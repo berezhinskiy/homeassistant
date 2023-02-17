@@ -1,0 +1,35 @@
+# Loads default set of integrations. Do not remove.
+default_config:
+
+# https://www.home-assistant.io/integrations/http/
+http:
+  use_x_forwarded_for: true
+  login_attempts_threshold: 5
+  ip_ban_enabled: true
+  trusted_proxies: !secret proxies
+
+homeassistant:
+  name: Home
+  latitude: !secret location_latitude
+  longitude: !secret location_longitude
+  elevation: 179
+  time_zone: Europe/Kyiv
+  unit_system: metric
+  temperature_unit: C
+  currency: UAH
+  country: UA
+  external_url: !secret external_url
+
+  # All configuration files are located inside packages
+  # https://www.home-assistant.io/docs/configuration/packages/
+  packages: !include_dir_merge_named packages/
+
+
+# Load frontend themes from the themes folder
+# frontend:
+#   themes: !include_dir_merge_named themes
+
+# Include changes made manually via UI
+script: !include scripts.yaml
+scene: !include scenes.yaml
+automation: !include automations.yaml

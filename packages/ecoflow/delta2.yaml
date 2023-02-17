@@ -1,0 +1,63 @@
+---
+ecoflow_delta2:
+  sensor:
+    - platform: rest
+      name: ecoflow_delta2
+      resource: !secret ecoflow_resource
+      scan_interval: 5
+      timeout: 30
+      authentication: digest
+      headers:
+        User-Agent: Home Assistant
+        Content-Type: application/json
+        Accept: application/json
+        appKey: !secret ecoflow_app_key
+        secretKey: !secret ecoflow_secret_key
+      json_attributes_path: '$.data'
+      json_attributes:
+        - soc
+        - remainTime
+        - wattsOutSum
+        - wattsInSum
+
+  template:
+    - sensor:
+      - name: "EcoFlow DELTA2 - State of charge"
+        unit_of_measurement: "%"
+        device_class: battery
+        state: >
+          {% if state_attr('sensor.ecoflow_delta2', 'soc') == None %}
+            0
+          {% else %}
+            {{ state_attr('sensor.ecoflow_delta2', 'soc') }}
+          {% endif %}
+
+      - name: "EcoFlow DELTA2 - Remain time"
+        unit_of_measurement: "min"
+        device_class: duration
+        state: >
+          {% if state_attr('sensor.ecoflow_delta2', 'remainTime') == None %}
+            0
+          {% else %}
+            {{ state_attr('sensor.ecoflow_delta2', 'remainTime') }}
+          {% endif %}
+
+      - name: "EcoFlow DELTA2 - Watts Out Sum"
+        unit_of_measurement: "W"
+        device_class: power
+        state: >
+          {% if state_attr('sensor.ecoflow_delta2', 'wattsOutSum') == None %}
+            0
+          {% else %}
+            {{ state_attr('sensor.ecoflow_delta2', 'wattsOutSum') }}
+          {% endif %}
+
+      - name: "EcoFlow DELTA2 - Watts In Sum"
+        unit_of_measurement: "W"
+        device_class: power
+        state: >
+          {% if state_attr('sensor.ecoflow_delta2', 'wattsInSum') == None %}
+            0
+          {% else %}
+            {{ state_attr('sensor.ecoflow_delta2', 'wattsInSum') }}
+          {% endif %}

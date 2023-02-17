@@ -1,0 +1,13 @@
+synology_srm:
+  device_tracker:
+    # https://www.home-assistant.io/integrations/synology_srm/
+    - platform: synology_srm
+      interval_seconds: 10
+      consider_home: 30
+      host: !secret synology_host
+      username: !secret synology_username
+      password: !secret synology_password
+      ssl: false
+      port: 8000
+      new_device_defaults:
+        track_new_devices: true

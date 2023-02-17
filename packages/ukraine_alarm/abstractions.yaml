@@ -1,0 +1,36 @@
+---
+# https://www.home-assistant.io/integrations/ukraine_alarm/
+
+ukraine_alarm_abstractions:
+  # https://www.home-assistant.io/integrations/template/
+  template:
+    # https://www.home-assistant.io/integrations/binary_sensor/
+    - binary_sensor:
+        - name: Civil defense siren Kyiv
+          # id: civil_defense_siren_kyiv
+          device_class: safety
+          state: >
+            {{ is_state('binary_sensor.m_kiyiv_air', 'on')
+                or is_state('binary_sensor.m_kiyiv_artillery', 'on')
+                or is_state('binary_sensor.m_kiyiv_unknown', 'on')
+                or is_state('binary_sensor.m_kiyiv_urban_fights', 'on')
+                or is_state('binary_sensor.m_kiyiv_nuclear', 'on')
+                or is_state('binary_sensor.m_kiyiv_chemical', 'on')
+            }}
+          icon: >
+            {% if is_state("binary_sensor.civil_defense_siren_kyiv", "on") %}
+            mdi:skull
+            {% else %}
+            mdi:shield-check
+            {% endif %}
+          attributes:
+            # Workaround for "SecurityError: access to attribute 'append' of 'list' object is unsafe"
+            type: >
+              {%- set data = namespace(entities=[]) -%}
+              {%- if is_state('binary_sensor.m_kiyiv_air', 'on') %}{% set data.entities = data.entities + ["Air"] %}{% endif %}
+              {%- if is_state('binary_sensor.m_kiyiv_artillery', 'on') %}{% set data.entities = data.entities + ["Artilery"] %}{% endif %}
+              {%- if is_state('binary_sensor.m_kiyiv_unknown', 'on') %}{% set data.entities = data.entities + ["Unknow"] %}{% endif %}
+              {%- if is_state('binary_sensor.m_kiyiv_urban_fights', 'on') %}{% set data.entities = data.entities + ["Urban fights"] %}{% endif %}
+              {%- if is_state('binary_sensor.m_kiyiv_nuclear', 'on') %}{% set data.entities = data.entities + ["Nuclear"] %}{% endif %}
+              {%- if is_state('binary_sensor.m_kiyiv_chemical', 'on') %}{% set data.entities = data.entities + ["Chemical"] %}{% endif %}
+              {%- if data.entities | length > 0%}{{ data.entities | join(", ") }}{% else %}All-clear{% endif %}
