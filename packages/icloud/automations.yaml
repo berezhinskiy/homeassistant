@@ -1,0 +1,14 @@
+icloud_automations:
+
+  automation:
+    - id: Update iCloud
+      alias: Update iCloud
+      trigger:
+        # https://www.home-assistant.io/docs/automation/trigger/#time-pattern-trigger
+        - platform: time_pattern
+          minutes: '/15'
+      action:
+        # https://www.home-assistant.io/integrations/icloud/#service-icloudupdate
+        - service: icloud.update
+          data:
+            account: !secret icloud_account
